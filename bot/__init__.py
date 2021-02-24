@@ -3,8 +3,7 @@ from queue import Queue
 from threading import Thread
 
 from environs import Env
-from flask import Flask, request, send_from_directory
-from flask_sslify import SSLify
+from flask import Flask, request
 import telegram
 from telegram import Bot
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
