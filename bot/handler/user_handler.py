@@ -1,0 +1,131 @@
+import logging
+from environs import Env
+from textwrap import dedent
+import redis
+
+from bot.handler.book_keyboard import get_books_search_keyboard, get_book_detail_keyboard, get_book_file_keyboard
+from bot.handler.manage_books import get_cover_url
+
+
+_database = None
+env = Env()
+
+
+def start(update, context, db):
+    query = update.callback_query
+    if query:
+        chat_id = query.message.chat_id
+        query.delete_message()
+    else:    
+        chat_id = update.effective_chat.id
+   
+    context.bot.send_message(chat_id=chat_id, text='Напишите название книги')
+    return 'HANDLE_BOOKS_MENU'
+
+
+def handle_books_menu(update, context, db):
+    query = update.callback_query
+    if query:
+        chat_id = query.message.chat_id
+        message, reply_markup = get_books_search_keyboard(chat_id, db, menu_button=query.data)
+        query.edit_message_reply_markup(reply_markup=reply_markup)
+    else:
+        chat_id = update.effective_chat.id
+        book_name = update.message.text
+        message, reply_markup = get_books_search_keyboard(chat_id, db, book_name=book_name)
+        context.bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
+        
+    return 'HANDLE_BOOK'
+
+
+def handle_book(update, context, db):
+    query = update.callback_query
+    chat_id = query.message.chat_id
+    
+    if 'description' in query.data:
+        __, book_url = query.data.split(',')
+        message, reply_markup = get_book_detail_keyboard(book_url, db, need_description=True)
+        query.edit_message_caption(caption=message, reply_markup=reply_markup)
+    else:
+        book_url = query.data
+        message, reply_markup = get_book_detail_keyboard(book_url, db)
+        query.delete_message()
+        cover_url = get_cover_url(book_url, db)
+        context.bot.send_photo(chat_id=chat_id, photo=cover_url, caption=message, reply_markup=reply_markup)
+
+    return 'HANDLE_DOWNLOAD_FILE'
+
+
+def handle_download_file(update, context, db):
+    query = update.callback_query
+    chat_id = query.message.chat_id
+    context.bot.send_message(chat_id=chat_id, text='Подождите, книга скачивается')
+    filename, book, reply_markup = get_book_file_keyboard(query.data, db)
+    context.bot.send_document(chat_id=chat_id, document=book, filename=filename)
+    context.bot.send_message(chat_id=chat_id, text='Нажмите на файл для сохранения книги.', reply_markup=reply_markup)
+    return 'START'
+
+
+def handle_help(update, context, db):
+    message = dedent('''
+    Я помогаю находить тебе бесплатные книги в сети.
+    Книги я присылаю в формате epub, поэтому если твоя
+    читалка не поддерживает данный формат, нужно скачать другую.
+    
+    Основные команды:
+    /start - Для начала работы со мной нажми
+    ''')
+    update.message.reply_text(message)
+    return 'START'
+
+
+def handle_users_reply(update, context):
+    db = get_database_connection()
+    query = update.callback_query
+    if update.message:
+        user_reply = update.message.text
+        chat_id = update.message.chat_id
+    elif query:
+        user_reply = query.data
+        chat_id = query.message.chat_id
+    else:
+        return
+
+    if user_reply == '/start':
+        user_state = 'START'
+    elif 'prev' in user_reply or 'next' in user_reply:
+        user_state = 'HANDLE_BOOKS_MENU'
+    elif 'description' in user_reply:
+        user_state = 'HANDLE_BOOK'
+    elif user_reply == '/help':
+        user_state = 'HELP'
+    else:
+        user_state = db.get(chat_id).decode("utf-8")
+
+    states_functions = {
+        'START': start,
+        'HANDLE_BOOKS_MENU': handle_books_menu,
+        'HANDLE_BOOK': handle_book,
+        'HANDLE_DOWNLOAD_FILE': handle_download_file,
+        'HELP': handle_help,
+    }
+
+    state_handler = states_functions[user_state]
+    try:
+        next_state = state_handler(update, context, db)
+        db.set(chat_id, next_state)
+    except Exception as err:
+        logging.exception(err)
+
+
+def get_database_connection():
+    global _database
+    if _database is None:
+        database_password = env("DATABASE_PASSWORD")
+        database_host = env("DATABASE_HOST")
+        database_port = env("DATABASE_PORT")
+
+        _database = redis.Redis(host=database_host,
+                                port=database_port,
+                                password=database_password)
+    return _database
