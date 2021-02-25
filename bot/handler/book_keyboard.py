@@ -4,7 +4,7 @@ from more_itertools import chunked
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.handler.check_text import check_speller
-from bot.handler.book import get_books_info, get_book_info, check_book_available
+from bot.parser.book import get_books_info, get_book_info, check_book_available
 from bot.handler.manage_books import get_book
 
 
