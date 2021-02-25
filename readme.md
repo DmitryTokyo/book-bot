@@ -1,11 +1,9 @@
 # Book webhook bot
 
 ## About
----
 The Book Webhook Bot searchs in several recources. Bot was based on Flask framework and working via webhook. Books are sent to Telegram. 
 
 ## Requirements
----
 - Programing language - Python 3.8.5.
 - Webhook was built on - Flask.
 - Telegram bot library - Python-telegram-bot.
