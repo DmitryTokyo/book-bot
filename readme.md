@@ -1,7 +1,7 @@
 # Book webhook bot
 
 ## About
-The Book Webhook Bot searchs in several recources. Bot was based on Flask framework and working via webhook. Books are sent to Telegram. 
+The Book Webhook Bot searches in several recources. Bot was based on Flask framework and working via webhook. Books are sent to Telegram. 
 
 ## Requirements
 - Programing language - Python 3.8.5.
@@ -29,7 +29,7 @@ The Book Webhook Bot searchs in several recources. Bot was based on Flask framew
 ## Usage
 1. Start the `./ngrok http 5000` and put to `.env` https link.
 2. Start the app by command `flask run`.
-3. Set up your webhook to follow the your url. You can see in your browser `webhook setup ok!!!`.
+3. Set up your webhook to follow the url. You can see in your browser `webhook setup ok!!!`.
 4. Send your bot `/start`.
 
 ## License
