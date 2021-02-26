@@ -1,15 +1,15 @@
 # Book webhook bot
 
 ## About
-The Book Webhook Bot searches in several recources. Bot was based on Flask framework and working via webhook. Books are sent to Telegram. 
+The Book Webhook Bot searches in several resources. Bot was based on Flask framework and working via webhook. Books are sent to Telegram. 
 
 ## Requirements
-- Programing language - Python 3.8.5.
+- Programming language - Python 3.8.5.
 - Webhook was built on - Flask.
 - Telegram bot library - Python-telegram-bot.
 - Cache is using - Redis database.
 
-## Instalation
+## Installation
 1. Clone this repository `git clone https://github.com/DmitryTokyo/quotes.git`.
 2. Create virtual environment `python3 -m venv venv` and activate `source venv/bin/activate`.
 3. Install all dependencies `pip install -r requirements.txt`
