@@ -28,31 +28,36 @@ def handle_books_menu(update, context, db):
     query = update.callback_query
     if query:
         chat_id = query.message.chat_id
-        message, reply_markup = get_books_search_keyboard(chat_id, db, menu_button=query.data)
+        user_data = query.from_user
+        message, reply_markup, is_found = get_books_search_keyboard(chat_id, db, menu_button=query.data)
         query.edit_message_reply_markup(reply_markup=reply_markup)
     else:
         chat_id = update.effective_chat.id
+        user_data = update.effective_user
         book_name = update.message.text
-        message, reply_markup = get_books_search_keyboard(chat_id, db, book_name=book_name)
+        message, reply_markup, is_found = get_books_search_keyboard(chat_id, db, book_name=book_name)
         context.bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
-
+    if not is_found:
+        notify_unsuccessful_search(context, user_data, book_name)
     return 'HANDLE_BOOK'
 
 
 def handle_book(update, context, db):
     query = update.callback_query
     chat_id = query.message.chat_id
+    user_data = query.from_user
     if 'description' in query.data:
         __, book_url = query.data.split(',')
-        message, reply_markup = get_book_detail_keyboard(book_url, db, need_description=True)
+        message, reply_markup, bookname, is_available = get_book_detail_keyboard(book_url, db, need_description=True)
         query.edit_message_caption(caption=message, reply_markup=reply_markup)
     else:
         book_url = query.data
-        message, reply_markup = get_book_detail_keyboard(book_url, db)
+        message, reply_markup, bookname, is_available = get_book_detail_keyboard(book_url, db)
         query.delete_message()
         cover_url = get_cover_url(book_url, db)
         context.bot.send_photo(chat_id=chat_id, photo=cover_url, caption=message, reply_markup=reply_markup)
-
+    if not is_available:
+        notify_unexist_book(context, user_data, bookname)
     return 'HANDLE_DOWNLOAD_FILE'
 
 
@@ -79,12 +84,37 @@ def handle_help(update, context, db):
     return 'START'
 
 
+def notify_unsuccessful_search(context, user_data, book_name):
+    print(dir(user_data))
+    message = dedent(f'''
+        Поиск книги по запросу -  {book_name} не удался
+
+        user_id - {user_data.id}
+        username - {user_data.username}
+        firstname - {user_data.first_name}
+        ''')
+    logger.warning(message)
+
+
+def notify_unexist_book(context, user_data, book_name):
+    print(dir(user_data))
+    message = dedent(f'''
+        Доступ к книге - {book_name} закрыт
+
+        user_id - {user_data.id}
+        username - {user_data.username}
+        firstname - {user_data.first_name}
+        ''')
+    logger.warning(message)
+
+
 def handle_users_reply(update, context):
     db = get_database_connection()
     query = update.callback_query
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
+        user_data = update.effective_user
     elif query:
         user_reply = query.data
         chat_id = query.message.chat_id
@@ -118,9 +148,9 @@ def handle_users_reply(update, context):
     except Exception as err:
         message = dedent(f'''
         Bot got error
-        user_id - {user_data['id']}
-        username - {user_data['username']}
-        firstname - {user_data['first_name']}
+        user_id - {user_data.id}
+        username - {user_data.username}
+        firstname - {user_data.first_name}
         ''')
         logger.error(message)
         logger.exception(err)

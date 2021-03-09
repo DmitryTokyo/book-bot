@@ -15,11 +15,12 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
         db.set(f'books_{chat_id}', json.dumps(books))
     else:
         books = json.loads(db.get(f'books_{chat_id}'))
-    
+
     if not books:
         message = 'К сожалению ничего не нашлось.'
         books_keyboard = [[InlineKeyboardButton('Новый поиск', callback_data='/start')]]
-        return message, InlineKeyboardMarkup(books_keyboard)
+        is_found = False
+        return message, InlineKeyboardMarkup(books_keyboard), is_found
 
     books_pages = list(chunked(books, 4))
     max_page_index = len(books_pages)
@@ -29,7 +30,7 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
     else:
         __, page_number = menu_button.split(',')
         page_number = int(page_number)
-    
+
     books_keyboard = [
         [InlineKeyboardButton(book['title'], callback_data=book['book_url'])]
         for book
@@ -47,9 +48,9 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
             ])
         else:
             books_keyboard.append([
-                InlineKeyboardButton(f'<- стр {page_number - 1}', callback_data=f'prev,{page_number - 1}'), 
+                InlineKeyboardButton(f'<- стр {page_number - 1}', callback_data=f'prev,{page_number - 1}'),
                 InlineKeyboardButton(f'стр {page_number + 1} ->', callback_data=f'prev,{page_number + 1}')
-                ])
+            ])
     if len(books_pages[0]) == 1:
         message = 'Найденная книга'
     else:
@@ -58,8 +59,8 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
     books_keyboard.append([
         InlineKeyboardButton('Новый поиск', callback_data='/start')
     ])
-            
-    return message, InlineKeyboardMarkup(books_keyboard)
+    is_found = True
+    return message, InlineKeyboardMarkup(books_keyboard), is_found
 
 
 def get_book_detail_keyboard(book_url, db, need_description=False):
@@ -76,7 +77,7 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
     if not is_available:
         message = 'К сожалению доступ к бесплатной книге ограничен :('
         book_keyboard = [[InlineKeyboardButton('Новый поиск', callback_data='/start')]]
-        return message, InlineKeyboardMarkup(book_keyboard)
+        return message, InlineKeyboardMarkup(book_keyboard), book['title'], is_available
 
     message = book['title']
     description = book['description']
@@ -89,8 +90,8 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
         ]
     book_keyboard.append([InlineKeyboardButton('Скачать книгу epub', callback_data=f'{book_file_link},{book_id}')])
     book_keyboard.append([InlineKeyboardButton('Новый поиск', callback_data='/start')])
-    
-    return message, InlineKeyboardMarkup(book_keyboard)
+
+    return message, InlineKeyboardMarkup(book_keyboard), book['title'], is_available
 
 
 def get_book_file_keyboard(book_file_link, db):
