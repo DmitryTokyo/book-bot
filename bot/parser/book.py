@@ -4,14 +4,14 @@ from urllib.parse import urljoin
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 
-ua = UserAgent()
+user_agent = UserAgent()
 
 
 def get_books_info(book_name):
     url_fl = 'http://flibusta.is/booksearch'
 
     headers = {
-        'User-Agent': ua.random,
+        'User-Agent': user_agent.random,
     }
 
     payload = {
@@ -42,7 +42,7 @@ def get_books_info(book_name):
 
 def get_book_info(book_link):
     headers = {
-        'User-Agent': ua.random,
+        'User-Agent': user_agent.random,
     }
 
     response = requests.get(book_link, headers=headers)
