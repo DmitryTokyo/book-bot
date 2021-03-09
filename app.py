@@ -13,10 +13,27 @@ from bot.handler.user_handler import handle_users_reply
 app = Flask(__name__)
 env = Env()
 
+logger = logging.getLogger('book_bot')
+logger.setLevel(logging.INFO)
+
 TOKEN = env('TG_TOKEN')
 URL = env('URL')
+ADMIN_TG_ID = env('ADMIN_TG_ID')
 bot = Bot(TOKEN)
 update_queue = Queue()
+
+
+class TelegramLogsHandler(logging.Handler):
+
+    def __init__(self, bot, user_id):
+        super().__init__()
+        self.chat_id = user_id
+        self.bot = bot
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.bot.send_message(chat_id=self.chat_id, text=log_entry)
+
 
 dispatcher = Dispatcher(bot, update_queue)
 thread = Thread(target=dispatcher.start, name='dispatcher')
@@ -25,6 +42,8 @@ thread.start()
 dispatcher.add_handler(CommandHandler('start',  handle_users_reply, pass_job_queue=True))
 dispatcher.add_handler(CallbackQueryHandler(handle_users_reply, pass_job_queue=True))
 dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply, pass_job_queue=True))
+logger.addHandler(TelegramLogsHandler(bot, ADMIN_TG_ID))
+logger.info('Bot started work')
 
 
 @app.route(f'/{TOKEN}', methods=['POST'])
@@ -49,7 +68,7 @@ def webhook_set():
         return "webhook setup ok!!!"
     else:
         return "webhook setup failed"
-        
+
 
 if __name__ == "__main__":
     env.read_env()
