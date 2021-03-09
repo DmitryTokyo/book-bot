@@ -9,6 +9,7 @@ from bot.handler.manage_books import get_cover_url
 
 _database = None
 env = Env()
+logger = logging.getLogger('book_bot')
 
 
 def start(update, context, db):
@@ -16,9 +17,9 @@ def start(update, context, db):
     if query:
         chat_id = query.message.chat_id
         query.delete_message()
-    else:    
+    else:
         chat_id = update.effective_chat.id
-   
+
     context.bot.send_message(chat_id=chat_id, text='Напишите название книги')
     return 'HANDLE_BOOKS_MENU'
 
@@ -34,14 +35,13 @@ def handle_books_menu(update, context, db):
         book_name = update.message.text
         message, reply_markup = get_books_search_keyboard(chat_id, db, book_name=book_name)
         context.bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
-        
+
     return 'HANDLE_BOOK'
 
 
 def handle_book(update, context, db):
     query = update.callback_query
     chat_id = query.message.chat_id
-    
     if 'description' in query.data:
         __, book_url = query.data.split(',')
         message, reply_markup = get_book_detail_keyboard(book_url, db, need_description=True)
@@ -88,6 +88,7 @@ def handle_users_reply(update, context):
     elif query:
         user_reply = query.data
         chat_id = query.message.chat_id
+        user_data = query.from_user
     else:
         return
 
@@ -115,7 +116,14 @@ def handle_users_reply(update, context):
         next_state = state_handler(update, context, db)
         db.set(chat_id, next_state)
     except Exception as err:
-        logging.exception(err)
+        message = dedent(f'''
+        Bot got error
+        user_id - {user_data['id']}
+        username - {user_data['username']}
+        firstname - {user_data['first_name']}
+        ''')
+        logger.error(message)
+        logger.exception(err)
 
 
 def get_database_connection():
