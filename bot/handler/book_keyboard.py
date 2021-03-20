@@ -1,7 +1,8 @@
 import json
 import os
+from textwrap import dedent
 from more_itertools import chunked
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 
 from bot.handler.check_text import check_speller
 from bot.parser.book import get_books_info, get_book_info, check_book_available
@@ -17,10 +18,15 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
         books = json.loads(db.get(f'books_{chat_id}'))
 
     if not books:
-        message = 'К сожалению ничего не нашлось.'
-        books_keyboard = [[InlineKeyboardButton('Новый поиск', callback_data='/start')]]
+        message = dedent('''
+        К сожалению ничего не нашлось.
+
+        Для нового поиска воспользуйся кнопкой
+
+        ⬇️⬇️⬇️⬇️''')
+        search_keyboard = get_search_keyboard()
         is_found = False
-        return message, InlineKeyboardMarkup(books_keyboard), is_found
+        return message, search_keyboard, is_found
 
     books_pages = list(chunked(books, 4))
     max_page_index = len(books_pages)
@@ -54,11 +60,8 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
     if len(books_pages[0]) == 1:
         message = 'Найденная книга'
     else:
-        message = 'Найденные книги'
+        message = f'''Найденные книги'''
 
-    books_keyboard.append([
-        InlineKeyboardButton('Новый поиск', callback_data='/start')
-    ])
     is_found = True
     return message, InlineKeyboardMarkup(books_keyboard), is_found
 
@@ -75,9 +78,14 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
     book_file_link = book['book_file_link']
     is_available = check_book_available(book_file_link)
     if not is_available:
-        message = 'К сожалению доступ к бесплатной книге ограничен :('
-        book_keyboard = [[InlineKeyboardButton('Новый поиск', callback_data='/start')]]
-        return message, InlineKeyboardMarkup(book_keyboard), book['title'], is_available
+        message = dedent('''
+        Доступ к бесплатной книге ограничен 😢🙅🏻‍♂️
+
+        Для нового поиска воспользуйся кнопкой
+
+        ⬇️⬇️⬇️⬇️''')
+        search_keyboard = get_search_keyboard()
+        return message, search_keyboard, book['title'], is_available
 
     message = book['title']
     description = book['description']
@@ -89,12 +97,17 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
             [InlineKeyboardButton('описание', callback_data=f'description,{book_url}')],
         ]
     book_keyboard.append([InlineKeyboardButton('Скачать книгу epub', callback_data=f'{book_file_link},{book_id}')])
-    book_keyboard.append([InlineKeyboardButton('Новый поиск', callback_data='/start')])
 
     return message, InlineKeyboardMarkup(book_keyboard), book['title'], is_available
 
 
 def get_book_file_keyboard(book_file_link, db):
     book, book_file = get_book(book_file_link, db)
-    books_keyboard = [[InlineKeyboardButton('Новый поиск', callback_data='/start')]]
-    return book, book_file, InlineKeyboardMarkup(books_keyboard)
+    search_keyboard = get_search_keyboard()
+    return book, book_file, search_keyboard
+
+
+def get_search_keyboard():
+    search_keyboard = [['Новый поиск']]
+    search_markup = ReplyKeyboardMarkup(search_keyboard, one_time_keyboard=True, resize_keyboard=True)
+    return search_markup
