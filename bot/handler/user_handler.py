@@ -5,15 +5,13 @@ import redis
 from telegram import ReplyKeyboardMarkup
 
 from bot.handler.book_keyboard import get_books_search_keyboard, get_book_detail_keyboard, get_book_file_keyboard
+from bot.handler.book_keyboard import get_search_keyboard
 from bot.handler.manage_books import get_cover_url
 
 
 _database = None
 env = Env()
 logger = logging.getLogger('book_bot')
-
-search_keyboard = [['Новый поиск']]
-search_markup = ReplyKeyboardMarkup(search_keyboard, one_time_keyboard=True, resize_keyboard=True)
 
 
 def start(update, context, db):
@@ -23,7 +21,7 @@ def start(update, context, db):
         query.delete_message()
     else:
         chat_id = update.effective_chat.id
-
+    search_markup = get_search_keyboard()
     context.bot.send_message(chat_id=chat_id, text='Напишите название книги', reply_markup=search_markup)
     return 'HANDLE_BOOKS_MENU'
 
@@ -48,7 +46,11 @@ def handle_books_menu(update, context, db):
 
 def handle_book(update, context, db):
     query = update.callback_query
-    chat_id = query.message.chat_id
+    try:
+        chat_id = query.message.chat_id
+    except AttributeError:
+        return 'HANDLE_BOOKS_MENU'
+
     user_data = query.from_user
     if 'description' in query.data:
         __, book_url = query.data.split(',')
