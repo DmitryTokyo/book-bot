@@ -2,6 +2,7 @@ import logging
 from environs import Env
 from textwrap import dedent
 import redis
+from telegram import ReplyKeyboardMarkup
 
 from bot.handler.book_keyboard import get_books_search_keyboard, get_book_detail_keyboard, get_book_file_keyboard
 from bot.handler.manage_books import get_cover_url
@@ -10,6 +11,9 @@ from bot.handler.manage_books import get_cover_url
 _database = None
 env = Env()
 logger = logging.getLogger('book_bot')
+
+search_keyboard = [['Новый поиск']]
+search_markup = ReplyKeyboardMarkup(search_keyboard, one_time_keyboard=True, resize_keyboard=True)
 
 
 def start(update, context, db):
@@ -20,7 +24,7 @@ def start(update, context, db):
     else:
         chat_id = update.effective_chat.id
 
-    context.bot.send_message(chat_id=chat_id, text='Напишите название книги')
+    context.bot.send_message(chat_id=chat_id, text='Напишите название книги', reply_markup=search_markup)
     return 'HANDLE_BOOKS_MENU'
 
 
@@ -85,7 +89,6 @@ def handle_help(update, context, db):
 
 
 def notify_unsuccessful_search(context, user_data, book_name):
-    print(dir(user_data))
     message = dedent(f'''
         Поиск книги по запросу -  {book_name} не удался
 
@@ -122,7 +125,7 @@ def handle_users_reply(update, context):
     else:
         return
 
-    if user_reply == '/start':
+    if user_reply == '/start' or user_reply == 'Новый поиск':
         user_state = 'START'
     elif 'prev' in user_reply or 'next' in user_reply:
         user_state = 'HANDLE_BOOKS_MENU'
