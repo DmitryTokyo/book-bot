@@ -65,9 +65,14 @@ def get_book_info(book_link):
 
     book_size_tags = soup.find(id='main').find('span', style='size')
     book_a_tags = book_size_tags.find_all_next('a')
-    
+
     for book_a_tag in book_a_tags[:4]:
         if re.search(r'epub', book_a_tag.text):
+            book_info['type'] = 'epub'
+        if re.search(r'pdf', book_a_tag.text):
+            book_info['type'] = 'pdf'
+
+        if 'type' in book_info:
             link = book_a_tag['href']
             book_info['book_file_link'] = urljoin(book_link, link)
             break
@@ -89,3 +94,14 @@ def check_book_available(link):
         return True
     except KeyError:
         return False
+
+
+def main():
+    url = 'http://flibusta.is/b/527097'
+    url_1 = 'http://flibusta.is/b/367254'
+    book_info = get_book_info(url_1)
+    print(book_info)
+
+
+if __name__ == '__main__':
+    main()
