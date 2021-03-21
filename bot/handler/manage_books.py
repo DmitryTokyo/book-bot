@@ -48,7 +48,8 @@ def get_filename(response):
     filename = response.headers['Content-Disposition']
     filename = re.split(r'.*filename=', filename)[1]
     if '.fb2' in filename:
-        filename = filename.replace('.fb2', '')
+        filename = filename.replace('.fb2', '').strip('"')
+    filename = filename.strip('"')
     return filename
 
 
