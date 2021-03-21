@@ -73,7 +73,6 @@ def handle_download_file(update, context, db):
     context.bot.send_message(chat_id=chat_id, text='Подождите, книга скачивается')
     filename, book, reply_markup = get_book_file_keyboard(query.data, db)
     context.bot.send_document(chat_id=chat_id, document=book, filename=filename)
-    context.bot.send_message(chat_id=chat_id, text='Нажмите на файл для сохранения книги.', reply_markup=reply_markup)
     return 'START'
 
 
