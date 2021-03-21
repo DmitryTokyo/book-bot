@@ -60,7 +60,8 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
     if len(books_pages[0]) == 1:
         message = 'Найденная книга'
     else:
-        message = f'''Найденные книги'''
+        message = f'''Найденные книги
+        {message}'''
 
     is_found = True
     return message, InlineKeyboardMarkup(books_keyboard), is_found
@@ -96,7 +97,7 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
         book_keyboard = [
             [InlineKeyboardButton('описание', callback_data=f'description,{book_url}')],
         ]
-    book_keyboard.append([InlineKeyboardButton('Скачать книгу epub', callback_data=f'{book_file_link},{book_id}')])
+    book_keyboard.append([InlineKeyboardButton(f'Скачать книгу {book["type"]}', callback_data=f'{book_file_link},{book_id}')])
 
     return message, InlineKeyboardMarkup(book_keyboard), book['title'], is_available
 
