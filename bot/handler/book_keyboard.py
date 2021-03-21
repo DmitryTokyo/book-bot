@@ -9,7 +9,7 @@ from bot.parser.book import get_books_info, get_book_info, check_book_available
 from bot.handler.manage_books import get_book
 
 
-def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
+def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
     if book_name:
         book_name = check_speller(book_name)
         books = get_books_info(book_name)
@@ -42,6 +42,11 @@ def get_books_search_keyboard(chat_id, db, book_name=None, menu_button=None):
         for book
         in books_pages[page_number - 1]
     ]
+
+    message = ''
+    for book in books_pages[page_number - 1]:
+        message += dedent(f'''
+        {book['title']}\n''')
 
     if max_page_index > 1:
         if page_number == 1:

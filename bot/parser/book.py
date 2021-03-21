@@ -31,6 +31,7 @@ def get_books_info(book_name):
     books_lib = []
     for count, book in enumerate(books.find_all('li')):
         book_link = book.find('a', href=True)['href']
+        check_book(urljoin(url_fl, book_link))
         book_title = book.text
         books_lib.append({
             'title': book_title,
@@ -96,12 +97,14 @@ def check_book_available(link):
         return False
 
 
-def main():
-    url = 'http://flibusta.is/b/527097'
-    url_1 = 'http://flibusta.is/b/367254'
-    book_info = get_book_info(url_1)
-    print(book_info)
+def check_book(url):
+    response = requests.head(url)
+    print(response.headers)
 
+def main():
+    name = 'Чистый код'
+    books = get_books_info(name)
+    print(books)
 
 if __name__ == '__main__':
     main()

@@ -4,7 +4,7 @@ from textwrap import dedent
 import redis
 from telegram import ReplyKeyboardMarkup
 
-from bot.handler.book_keyboard import get_books_search_keyboard, get_book_detail_keyboard, get_book_file_keyboard
+from bot.handler.book_keyboard import get_books_list_keyboard, get_book_detail_keyboard, get_book_file_keyboard
 from bot.handler.book_keyboard import get_search_keyboard
 from bot.handler.manage_books import get_cover_url
 
@@ -31,13 +31,13 @@ def handle_books_menu(update, context, db):
     if query:
         chat_id = query.message.chat_id
         user_data = query.from_user
-        message, reply_markup, is_found = get_books_search_keyboard(chat_id, db, menu_button=query.data)
+        message, reply_markup, is_found = get_books_list_keyboard(chat_id, db, menu_button=query.data)
         query.edit_message_reply_markup(reply_markup=reply_markup)
     else:
         chat_id = update.effective_chat.id
         user_data = update.effective_user
         book_name = update.message.text
-        message, reply_markup, is_found = get_books_search_keyboard(chat_id, db, book_name=book_name)
+        message, reply_markup, is_found = get_books_list_keyboard(chat_id, db, book_name=book_name)
         context.bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
     if not is_found:
         notify_unsuccessful_search(context, user_data, book_name)
