@@ -32,7 +32,7 @@ def handle_books_menu(update, context, db):
         chat_id = query.message.chat_id
         user_data = query.from_user
         message, reply_markup, is_found = get_books_list_keyboard(chat_id, db, menu_button=query.data)
-        query.edit_message_reply_markup(reply_markup=reply_markup)
+        query.edit_message_text(message, reply_markup=reply_markup)
     else:
         chat_id = update.effective_chat.id
         user_data = update.effective_user
@@ -70,6 +70,7 @@ def handle_book(update, context, db):
 def handle_download_file(update, context, db):
     query = update.callback_query
     chat_id = query.message.chat_id
+    query.delete_message()
     context.bot.send_message(chat_id=chat_id, text='Подождите, книга скачивается')
     filename, book, reply_markup = get_book_file_keyboard(query.data, db)
     context.bot.send_document(chat_id=chat_id, document=book, filename=filename)
