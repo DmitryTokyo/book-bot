@@ -31,7 +31,6 @@ def get_books_info(book_name):
     books_lib = []
     for count, book in enumerate(books.find_all('li')):
         book_link = book.find('a', href=True)['href']
-        check_book(urljoin(url_fl, book_link))
         book_title = book.text
         books_lib.append({
             'title': book_title,
@@ -96,10 +95,6 @@ def check_book_available(link):
     except KeyError:
         return False
 
-
-def check_book(url):
-    response = requests.head(url)
-    print(response.headers)
 
 def main():
     name = 'Чистый код'
