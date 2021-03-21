@@ -36,17 +36,15 @@ def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
     else:
         __, page_number = menu_button.split(',')
         page_number = int(page_number)
-
-    books_keyboard = [
-        [InlineKeyboardButton(book['title'], callback_data=book['book_url'])]
-        for book
-        in books_pages[page_number - 1]
-    ]
+    
+    book_page_count = page_number * 4 - 3
 
     message = ''
-    for book in books_pages[page_number - 1]:
+    books_keyboard = []
+    for count, book in enumerate(books_pages[page_number - 1], start=book_page_count):
+        books_keyboard.append([InlineKeyboardButton(f'Книга {count}', callback_data=book['book_url'])])
         message += dedent(f'''
-        {book['title']}\n''')
+        {count}. - {book['title']}\n''')
 
     if max_page_index > 1:
         if page_number == 1:
