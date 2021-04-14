@@ -71,6 +71,8 @@ def get_book_info(book_link):
             book_info['type'] = 'epub'
         if re.search(r'pdf', book_a_tag.text):
             book_info['type'] = 'pdf'
+        if re.search(r'djvu', book_a_tag.text):
+            book_info['type'] = 'djvu'
 
         if 'type' in book_info:
             link = book_a_tag['href']
@@ -94,12 +96,3 @@ def check_book_available(link):
         return True
     except KeyError:
         return False
-
-
-def main():
-    name = 'Чистый код'
-    books = get_books_info(name)
-    print(books)
-
-if __name__ == '__main__':
-    main()
