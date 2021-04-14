@@ -61,7 +61,8 @@ def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
                 InlineKeyboardButton(f'стр {page_number + 1} ->', callback_data=f'prev,{page_number + 1}')
             ])
     if len(books_pages[0]) == 1:
-        message = 'Найденная книга'
+        message = f'''Найденная книга
+        {message}'''
     else:
         message = f'''Найденные книги
         {message}'''
