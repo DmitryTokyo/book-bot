@@ -5,23 +5,27 @@ from more_itertools import chunked
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 
 from bot.handler.check_text import check_speller
-from bot.parser.book import get_books_info, get_book_info, check_book_available
+from bot.parser.book import get_books_list, get_book_info, check_book_available
 from bot.handler.manage_books import get_book
 
 
 def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
     if book_name:
         book_name = check_speller(book_name)
-        books = get_books_info(book_name)
-        db.set(f'books_{chat_id}', json.dumps(books))
+        books = get_books_list(book_name)
+        db.set(f'books_{chat_id}', json.dumps(books))  # Заношу в базу найденные книги по запросу
+        db.set(f'request_{chat_id}', book_name)  # Заношу запрос пользователя в базу
     else:
         books = json.loads(db.get(f'books_{chat_id}'))
 
     if not books:
-        message = dedent('''
-        К сожалению ничего не нашлось.
+        message = dedent(f'''
+        К сожалению по запросу {}
+        ничего не нашлось.
 
         Для нового поиска воспользуйся кнопкой
+
+        "Новый поиск"
 
         ⬇️⬇️⬇️⬇️''')
         search_keyboard = get_search_keyboard()
@@ -37,11 +41,12 @@ def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
         __, page_number = menu_button.split(',')
         page_number = int(page_number)
     
-    book_page_count = page_number * 4 - 3
+    # С какой книги по счету начинается вывод на странице
+    book_number_on_page = page_number * 4 - 3
 
     message = ''
     books_keyboard = []
-    for count, book in enumerate(books_pages[page_number - 1], start=book_page_count):
+    for count, book in enumerate(books_pages[page_number - 1], start=book_number_on_page):
         books_keyboard.append([InlineKeyboardButton(f'Книга {count}', callback_data=book['book_url'])])
         message += dedent(f'''
         {count}. - {book['title']}\n''')
@@ -87,6 +92,8 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
         Доступ к бесплатной книге ограничен 😢🙅🏻‍♂️
 
         Для нового поиска воспользуйся кнопкой
+
+        "Новый поиск"
 
         ⬇️⬇️⬇️⬇️''')
         search_keyboard = get_search_keyboard()
