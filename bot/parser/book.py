@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 user_agent = UserAgent()
 
 
-def get_books_info(book_name):
+def get_books_list(book_name):
     url_fl = 'http://flibusta.is/booksearch'
 
     headers = {
