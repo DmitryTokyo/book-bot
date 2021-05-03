@@ -20,7 +20,7 @@ def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
 
     if not books:
         message = dedent(f'''
-        К сожалению по запросу {}
+        К сожалению по запросу {book_name}
         ничего не нашлось.
 
         Для нового поиска воспользуйся кнопкой
