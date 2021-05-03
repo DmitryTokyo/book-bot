@@ -102,7 +102,6 @@ def notify_unsuccessful_search(context, user_data, book_name):
 
 
 def notify_unexist_book(context, user_data, book_name):
-    print(dir(user_data))
     message = dedent(f'''
         Доступ к книге - {book_name} закрыт
 
@@ -111,6 +110,10 @@ def notify_unexist_book(context, user_data, book_name):
         firstname - {user_data.first_name}
         ''')
     logger.warning(message)
+
+
+def notify_if_got_error(context):
+    pass
 
 
 def handle_users_reply(update, context):
@@ -156,6 +159,7 @@ def handle_users_reply(update, context):
         user_id - {user_data.id}
         username - {user_data.username}
         firstname - {user_data.first_name}
+        request - {db.get(f'request_{chat_id}')}
         ''')
         logger.error(message)
         logger.exception(err)
