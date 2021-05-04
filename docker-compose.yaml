@@ -1,0 +1,18 @@
+version: "3"
+
+volumes:
+  - books:/bot/books
+
+services:
+  book-bot:
+    build: .
+    restart: always
+    ports:
+      - 5000:5000
+    environment:
+      - ADMIN_TG_ID=
+      - DATABASE_HOST=
+      - DATABASE_PASSWORD=
+      - DATABASE_PORT=
+      - TG_TOKEN=
+      - URL=
