@@ -12,6 +12,7 @@ from bot.handler.user_handler import handle_users_reply
 
 app = Flask(__name__)
 env = Env()
+env.read_env()
 
 logger = logging.getLogger('book_bot')
 logger.setLevel(logging.INFO)
@@ -68,8 +69,3 @@ def webhook_set():
         return "webhook setup ok!!!"
     else:
         return "webhook setup failed"
-
-
-if __name__ == "__main__":
-    env.read_env()
-    app.run(host='0.0.0.0')
