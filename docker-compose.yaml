@@ -1,12 +1,27 @@
 version: "3"
 services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+    networks:
+      - my-network
+    depends_on:
+      - book-bot
   book-bot:
     volumes:
-      - .:/bot/books
+      - books:/bot/books
     build: .
+    command: gunicorn --bind 0.0.0.0:8000 --workers=2 "wsgi:app"
     restart: always
     ports:
       - 5000:5000
+    networks:
+      my-network:
     environment:
       - ADMIN_TG_ID=
       - DATABASE_HOST=
@@ -16,4 +31,6 @@ services:
       - URL=
 
 volumes:
-  logvolume01: {}
+  books: {}
+networks:
+  my-network:
