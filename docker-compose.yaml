@@ -1,4 +1,5 @@
 version: "3"
+
 services:
   nginx:
     image: nginx
@@ -6,6 +7,8 @@ services:
     restart: always
     volumes:
       - ./default.conf:/etc/nginx/conf.d/default.conf
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
     ports:
       - 80:80
     networks:
@@ -30,7 +33,19 @@ services:
       - DATABASE_PORT=
       - TG_TOKEN=
       - URL=
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - webserver
+    command: certonly --webroot --webroot-path=/var/www/html --email andimeon@google.com --agree-tos --no-eff-email --staging -d 174.138.26.153
+
 volumes:
   books: {}
+  certbot-etc:
+  certbot-var:
 networks:
   my-network:
