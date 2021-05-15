@@ -59,7 +59,7 @@ def webhook():
 
 @app.route('/check')
 def check():
-    return render_template('check.html', check='Well checked!')
+    return render_template('index.html', check='Well checked!')
 
 
 @app.route('/', methods=['GET'])
