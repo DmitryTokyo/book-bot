@@ -3,7 +3,7 @@ from queue import Queue
 from threading import Thread
 
 from environs import Env
-from flask import Flask, request
+from flask import Flask, request, render_template
 import telegram
 from telegram import Bot
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
@@ -59,13 +59,13 @@ def webhook():
 
 @app.route('/check')
 def check():
-    return '<h1>Works well</h1>'
+    return render_template('check.html', check='Well checked!')
 
 
 @app.route('/', methods=['GET'])
 def webhook_set():
     s = bot.setWebhook(f'{URL}/{TOKEN}')
     if s:
-        return "webhook setup ok!!!"
+        return render_template('webhook.html', webhook='webhook setup ok!!!')
     else:
-        return "webhook setup failed"
+        return render_template('webhook.html', webhook='webhook setup failed')
