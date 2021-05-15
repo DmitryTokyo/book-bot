@@ -40,7 +40,7 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
     depends_on:
-      - webserver
+      - nginx
     command: certonly --webroot --webroot-path=/var/www/html --email andimeon@google.com --agree-tos --no-eff-email --staging -d 174.138.26.153
 
 volumes:
