@@ -6,7 +6,7 @@ services:
     container_name: nginx
     restart: always
     volumes:
-      - ./default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx-conf:/etc/nginx/conf.d
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
     ports:
@@ -41,7 +41,7 @@ services:
       - certbot-var:/var/lib/letsencrypt
     depends_on:
       - nginx
-    command: certonly --webroot --webroot-path=/var/www/html --email andimeon@google.com --agree-tos --no-eff-email --staging -d bookbot.andimeon.com
+    command: certonly --webroot --webroot-path=/var/www/html --email andimeon@gmail.com --agree-tos --no-eff-email --staging -d bookbot.andimeon.com
 
 volumes:
   books: {}
