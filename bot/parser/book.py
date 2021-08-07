@@ -1,17 +1,17 @@
+import json
+import random
+
 import requests
 import re
 from urllib.parse import urljoin
-from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
-
-user_agent = UserAgent()
 
 
 def get_books_list(book_name):
     url_fl = 'http://flibusta.is/booksearch'
 
     headers = {
-        'User-Agent': user_agent.random,
+        'User-Agent': get_user_agent(),
     }
 
     payload = {
@@ -19,7 +19,8 @@ def get_books_list(book_name):
     }
 
     response = requests.get(url_fl, headers=headers, params=payload)
-    response.raise_for_status()
+    if not response.ok:
+        return None
 
     soup = BeautifulSoup(response.text, 'lxml')
 
@@ -42,11 +43,12 @@ def get_books_list(book_name):
 
 def get_book_info(book_link):
     headers = {
-        'User-Agent': user_agent.random,
+        'User-Agent': get_user_agent(),
     }
 
     response = requests.get(book_link, headers=headers)
-    response.raise_for_status()
+    if not response.ok:
+        return None
 
     soup = BeautifulSoup(response.text, 'lxml')
 
@@ -96,3 +98,13 @@ def check_book_available(link):
         return True
     except KeyError:
         return False
+
+
+def get_user_agent():
+    """
+    This function is working while fake-useragent lib
+    has the bug
+    """
+    with open('bot/parser/user_agent/user_agent.json', 'r') as file:
+        user_agents = json.load(file)
+        return random.choice(user_agents)
