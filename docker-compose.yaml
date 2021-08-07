@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
+      - dhparam:/etc/ssl/certs
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - my-network
+    depends_on:
+      - flask_app
+  flask_app:
+    container_name: flask_app
+    volumes:
+      - books:/bot/books
+    build: .
+    command: gunicorn -b 0.0.0.0:8000 -w 1 "config.wsgi:app"
+    restart: always
+    ports:
+      - 8000:8000
+    networks:
+      my-network:
+    env_file:
+      - .web-env
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
+    depends_on:
+      - nginx
+    command: certonly --webroot --webroot-path=/var/www/html --email andimeon@google.com --agree-tos --no-eff-email --force-renewal -d bookbot.andimeon.com
+
+volumes:
+  books: { }
+  certbot-etc:
+  certbot-var:
+  web-root:
+    driver: local
+    driver_opts:
+      type: none
+      device: /root/book-bot/bot/templates
+      o: bind
+
+  dhparam:
+    driver: local
+    driver_opts:
+      type: none
+      device: /root/book-bot/dhparam/
+      o: bind
+
+networks:
+  my-network:
+
