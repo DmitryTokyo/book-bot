@@ -185,3 +185,4 @@ cython_debug/
 .envrc
 .web-env
 dhparam/dhparam-2048.pem
+books/
