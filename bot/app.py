@@ -17,7 +17,7 @@ env.read_env()
 logger = logging.getLogger('book_bot')
 logger.setLevel(logging.INFO)
 
-TOKEN = env('TG_TOKEN')
+TOKEN = env('TG_TOKEN_TEST')  # Test token
 URL = env('URL')
 ADMIN_TG_ID = env('ADMIN_TG_ID')
 bot = Bot(TOKEN)
@@ -26,12 +26,12 @@ update_queue = Queue()
 
 class TelegramLogsHandler(logging.Handler):
 
-    def __init__(self, bot, user_id):
+    def __init__(self, bot: Bot, user_id: int) -> None:
         super().__init__()
         self.chat_id = user_id
         self.bot = bot
 
-    def emit(self, record):
+    def emit(self, record) -> None:
         log_entry = self.format(record)
         self.bot.send_message(chat_id=self.chat_id, text=log_entry)
 

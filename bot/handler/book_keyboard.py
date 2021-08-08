@@ -5,6 +5,7 @@ from more_itertools import chunked
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 
 from bot.handler.check_text import check_speller
+from bot.handler.notifications import get_did_not_find_message, get_limited_access_book_message
 from bot.parser.book import get_books_list, get_book_info, check_book_available
 from bot.handler.manage_books import get_book
 
@@ -19,15 +20,7 @@ def get_books_list_keyboard(chat_id, db, book_name=None, menu_button=None):
         books = json.loads(db.get(f'books_{chat_id}'))
 
     if not books:
-        message = dedent(f'''
-        К сожалению по запросу {book_name}
-        ничего не нашлось.
-
-        Для нового поиска воспользуйся кнопкой
-
-        "Новый поиск"
-
-        ⬇️⬇️⬇️⬇️''')
+        message = get_did_not_find_message(book_name)
         search_keyboard = get_search_keyboard()
         is_found = False
         return message, search_keyboard, is_found
@@ -88,14 +81,7 @@ def get_book_detail_keyboard(book_url, db, need_description=False):
     book_file_link = book['book_file_link']
     is_available = check_book_available(book_file_link)
     if not is_available:
-        message = dedent('''
-        Доступ к бесплатной книге ограничен 😢🙅🏻‍♂️
-
-        Для нового поиска воспользуйся кнопкой
-
-        "Новый поиск"
-
-        ⬇️⬇️⬇️⬇️''')
+        message = get_limited_access_book_message()
         search_keyboard = get_search_keyboard()
         return message, search_keyboard, book['title'], is_available
 

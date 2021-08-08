@@ -1,20 +1,19 @@
 import logging
 from environs import Env
-from textwrap import dedent
 import redis
-from telegram import ReplyKeyboardMarkup
 
 from bot.handler.book_keyboard import get_books_list_keyboard, get_book_detail_keyboard, get_book_file_keyboard
 from bot.handler.book_keyboard import get_search_keyboard
 from bot.handler.manage_books import get_cover_url
-
+from bot.handler.notifications import (notify_admin_unsuccessful_search, notify_admin_non_exist_book, get_help_message,
+                                       get_admin_error_message, get_user_error_message)
 
 _database = None
 env = Env()
 logger = logging.getLogger('book_bot')
 
 
-def start(update, context, db):
+def start(update, context, db=None):
     query = update.callback_query
     if query:
         chat_id = query.message.chat_id
@@ -33,6 +32,7 @@ def handle_books_menu(update, context, db):
         user_data = query.from_user
         message, reply_markup, is_found = get_books_list_keyboard(chat_id, db, menu_button=query.data)
         query.edit_message_text(message, reply_markup=reply_markup)
+        book_name = db.get(f'request_{chat_id}')
     else:
         chat_id = update.effective_chat.id
         user_data = update.effective_user
@@ -40,7 +40,9 @@ def handle_books_menu(update, context, db):
         message, reply_markup, is_found = get_books_list_keyboard(chat_id, db, book_name=book_name)
         context.bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
     if not is_found:
-        notify_unsuccessful_search(context, user_data, book_name)
+        notify_admin_unsuccessful_search(user_data, book_name)
+        return 'START'
+
     return 'HANDLE_BOOK'
 
 
@@ -54,16 +56,16 @@ def handle_book(update, context, db):
     user_data = query.from_user
     if 'description' in query.data:
         __, book_url = query.data.split(',')
-        message, reply_markup, bookname, is_available = get_book_detail_keyboard(book_url, db, need_description=True)
+        message, reply_markup, book_name, is_available = get_book_detail_keyboard(book_url, db, need_description=True)
         query.edit_message_caption(caption=message, reply_markup=reply_markup)
     else:
         book_url = query.data
-        message, reply_markup, bookname, is_available = get_book_detail_keyboard(book_url, db)
+        message, reply_markup, book_name, is_available = get_book_detail_keyboard(book_url, db)
         query.delete_message()
         cover_url = get_cover_url(book_url, db)
         context.bot.send_photo(chat_id=chat_id, photo=cover_url, caption=message, reply_markup=reply_markup)
     if not is_available:
-        notify_unexist_book(context, user_data, bookname)
+        notify_admin_non_exist_book(user_data, book_name)
     return 'HANDLE_DOWNLOAD_FILE'
 
 
@@ -78,47 +80,15 @@ def handle_download_file(update, context, db):
 
 
 def handle_help(update, context, db):
-    message = dedent('''
-    Я помогаю находить тебе бесплатные книги в сети.
-    Книги я присылаю в формате epub, поэтому если твоя
-    читалка не поддерживает данный формат, нужно скачать другую.
-    
-    Основные команды:
-    /start - Для начала работы со мной нажми
-    ''')
+    message = get_help_message()
     update.message.reply_text(message)
     return 'START'
-
-
-def notify_unsuccessful_search(context, user_data, book_name):
-    message = dedent(f'''
-        Поиск книги по запросу -  {book_name} не удался
-
-        user_id - {user_data.id}
-        username - {user_data.username}
-        firstname - {user_data.first_name}
-        ''')
-    logger.warning(message)
-
-
-def notify_unexist_book(context, user_data, book_name):
-    message = dedent(f'''
-        Доступ к книге - {book_name} закрыт
-
-        user_id - {user_data.id}
-        username - {user_data.username}
-        firstname - {user_data.first_name}
-        ''')
-    logger.warning(message)
-
-
-def notify_if_got_error(context):
-    pass
 
 
 def handle_users_reply(update, context):
     db = get_database_connection()
     query = update.callback_query
+
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -128,7 +98,7 @@ def handle_users_reply(update, context):
         chat_id = query.message.chat_id
         user_data = query.from_user
     else:
-        return
+        return 'START'
 
     if user_reply == '/start' or user_reply == 'Новый поиск':
         user_state = 'START'
@@ -154,15 +124,13 @@ def handle_users_reply(update, context):
         next_state = state_handler(update, context, db)
         db.set(chat_id, next_state)
     except Exception as err:
-        message = dedent(f'''
-        Bot got error
-        user_id - {user_data.id}
-        username - {user_data.username}
-        firstname - {user_data.first_name}
-        request - {db.get(f'request_{chat_id}')}
-        ''')
-        logger.error(message)
+        error_admin_message = get_admin_error_message(user_data, chat_id, db)
+        logger.error(error_admin_message)
         logger.exception(err)
+
+        error_user_message = get_user_error_message(user_data)
+        context.bot.send_message(chat_id=chat_id, text=error_user_message)
+        return 'START'
 
 
 def get_database_connection():
