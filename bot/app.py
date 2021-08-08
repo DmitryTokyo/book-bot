@@ -17,7 +17,7 @@ env.read_env()
 logger = logging.getLogger('book_bot')
 logger.setLevel(logging.INFO)
 
-TOKEN = env('TG_TOKEN_TEST')  # Test token
+TOKEN = env('TG_TOKEN')  # Test token
 URL = env('URL')
 ADMIN_TG_ID = env('ADMIN_TG_ID')
 bot = Bot(TOKEN)
