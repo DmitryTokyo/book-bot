@@ -1,28 +1,24 @@
 import json
 import random
+from typing import Optional
 
 import requests
 import re
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
+from config import config
 
-def get_books_list(book_name):
-    url_fl = 'http://flibusta.is/booksearch'
+BookLib = list[dict[str, str]]
 
-    headers = {
-        'User-Agent': get_user_agent(),
-    }
 
-    payload = {
-        'ask': book_name,
-    }
+def get_books_list(book_name: str) -> Optional[BookLib]:
+    response = _make_request(config.URL_BOOKS_LIB, book_name=book_name)
 
-    response = requests.get(url_fl, headers=headers, params=payload)
-    if not response.ok:
+    if not response:
         return None
 
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = BeautifulSoup(response, 'lxml')
 
     title = soup.find('h3', string=re.compile('Найденные книги'))
     if not title:
@@ -30,27 +26,23 @@ def get_books_list(book_name):
 
     books = title.find_next('ul')
     books_lib = []
-    for count, book in enumerate(books.find_all('li')):
+    for book in books.find_all('li'):
         book_link = book.find('a', href=True)['href']
         book_title = book.text
         books_lib.append({
             'title': book_title,
-            'book_url': urljoin(url_fl, book_link),
+            'book_url': urljoin(config.URL_BOOKS_LIB, book_link),
         })
-    
+
     return books_lib
 
 
-def get_book_info(book_link):
-    headers = {
-        'User-Agent': get_user_agent(),
-    }
-
-    response = requests.get(book_link, headers=headers)
-    if not response.ok:
+def get_book_info(book_link: str):
+    response = _make_request(book_link)
+    if not response:
         return None
 
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = BeautifulSoup(response, 'lxml')
 
     title = soup.find(id='main').h1.text
     title = title.split('(')[0].strip()
@@ -60,10 +52,12 @@ def get_book_info(book_link):
         'book_file_link': None,
     }
     book_description_tag = soup.find(id='main').find('h2', string=re.compile('Аннотация'))
-    if book_description_tag.find_next(string=re.compile('отсутствует')):
-        book_info['description'] = None
-    else:
-        book_info['description'] = book_description_tag.find_next('p').text
+
+    book_info['description'] = (
+        book_description_tag.find_next('p').text
+        if not book_description_tag.find_next(string=re.compile('отсутствует'))
+        else None
+    )
 
     book_size_tags = soup.find(id='main').find('span', style='size')
     book_a_tags = book_size_tags.find_all_next('a')
@@ -86,18 +80,13 @@ def get_book_info(book_link):
         book_info['cover_link'] = urljoin(book_link, cover_link)
     except TypeError:
         book_info['cover_link'] = None
-    
+
     return book_info
 
 
-def check_book_available(link):
+def is_book_available(link):
     response = requests.head(link)
-    response.raise_for_status()
-    try:
-        response.headers['Location']
-        return True
-    except KeyError:
-        return False
+    return True if response.headers.get('Location') else False
 
 
 def get_user_agent():
@@ -108,3 +97,19 @@ def get_user_agent():
     with open('bot/parser/user_agent/user_agent.json', 'r') as file:
         user_agents = json.load(file)
         return random.choice(user_agents)
+
+
+def _make_request(
+        url: str,
+        method: str = 'get',
+        book_name: str = None,
+) -> Optional[str]:
+    headers = {'User-Agent': get_user_agent()}
+
+    params = {'ask': book_name} if book_name else None
+    response = getattr(requests, method)(url, headers=headers, params=params)
+
+    if not response.ok:
+        return None
+
+    return response.text

@@ -1,6 +1,7 @@
 import logging
 from environs import Env
 import redis
+from redis import Redis
 
 from bot.handler.book_keyboard import get_books_list_keyboard, get_book_detail_keyboard, get_book_file_keyboard
 from bot.handler.book_keyboard import get_search_keyboard
@@ -25,7 +26,7 @@ def start(update, context, db=None):
     return 'HANDLE_BOOKS_MENU'
 
 
-def handle_books_menu(update, context, db):
+def handle_books_menu(update, context, db) -> str:
     query = update.callback_query
     if query:
         chat_id = query.message.chat_id
@@ -46,7 +47,7 @@ def handle_books_menu(update, context, db):
     return 'HANDLE_BOOK'
 
 
-def handle_book(update, context, db):
+def handle_book(update, context, db) -> str:
     query = update.callback_query
     try:
         chat_id = query.message.chat_id
@@ -69,7 +70,7 @@ def handle_book(update, context, db):
     return 'HANDLE_DOWNLOAD_FILE'
 
 
-def handle_download_file(update, context, db):
+def handle_download_file(update, context, db) -> str:
     query = update.callback_query
     chat_id = query.message.chat_id
     query.delete_message()
@@ -79,13 +80,13 @@ def handle_download_file(update, context, db):
     return 'START'
 
 
-def handle_help(update, context, db):
+def handle_help(update, context, db) -> str:
     message = get_help_message()
     update.message.reply_text(message)
     return 'START'
 
 
-def handle_users_reply(update, context):
+def handle_users_reply(update, context) -> str:
     db = get_database_connection()
     query = update.callback_query
 
@@ -100,7 +101,7 @@ def handle_users_reply(update, context):
     else:
         return 'START'
 
-    if user_reply == '/start' or user_reply == 'Новый поиск':
+    if user_reply in ['/start', 'Новый поиск']:
         user_state = 'START'
     elif 'prev' in user_reply or 'next' in user_reply:
         user_state = 'HANDLE_BOOKS_MENU'
@@ -109,7 +110,7 @@ def handle_users_reply(update, context):
     elif user_reply == '/help':
         user_state = 'HELP'
     else:
-        user_state = db.get(chat_id).decode("utf-8")
+        user_state = db.get(chat_id).decode('utf-8')
 
     states_functions = {
         'START': start,
@@ -133,12 +134,12 @@ def handle_users_reply(update, context):
         return 'START'
 
 
-def get_database_connection():
+def get_database_connection() -> Redis:
     global _database
     if _database is None:
-        database_password = env("DATABASE_PASSWORD")
-        database_host = env("DATABASE_HOST")
-        database_port = env("DATABASE_PORT")
+        database_password = env('DATABASE_PASSWORD')
+        database_host = env('DATABASE_HOST')
+        database_port = env('DATABASE_PORT')
 
         _database = redis.Redis(host=database_host,
                                 port=database_port,

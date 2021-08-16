@@ -1,23 +1,23 @@
 import requests
 
-url = 'https://speller.yandex.net/services/spellservice.json/checkText'
+from config import config
 
 
-def check_speller(text):
-    data = {
-        'text': text,
-    }
+def get_checking_by_speller(text: str) -> str:
+    data = {'text': text}
+    response = getattr(requests, 'post')(
+        config.YANDEX_SPELLER_URL,
+        data=data or {},
+    )
 
-    response = requests.post(url, data=data)
-    response.raise_for_status()
-
-    if not response.json():
+    if not response.ok or not response.json():
         return text
-    
+
+    correct_text: str = ''
     for word in response.json():
         original_word = word['word']
         correct_word = word['s'][0]
-        
-        text = text.replace(original_word, correct_word)
 
-    return text
+        correct_text = text.replace(original_word, correct_word)
+
+    return correct_text

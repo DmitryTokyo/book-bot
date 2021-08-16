@@ -1,8 +1,8 @@
-import logging
 from queue import Queue
 from threading import Thread
 
-from environs import Env
+from bot.logging import logger, TelegramLogsHandler
+from config import config
 from flask import Flask, request, render_template
 import telegram
 from telegram import Bot
@@ -10,62 +10,42 @@ from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, Messa
 
 from bot.handler.user_handler import handle_users_reply
 
-app = Flask(__name__)
-env = Env()
-env.read_env()
+app: Flask = Flask(__name__)
 
-logger = logging.getLogger('book_bot')
-logger.setLevel(logging.INFO)
-
-TOKEN = env('TG_TOKEN')  # Test token
-URL = env('URL')
-ADMIN_TG_ID = env('ADMIN_TG_ID')
-bot = Bot(TOKEN)
-update_queue = Queue()
+bot: Bot = Bot(config.TOKEN)
+update_queue: Queue = Queue()
 
 
-class TelegramLogsHandler(logging.Handler):
-
-    def __init__(self, bot: Bot, user_id: int) -> None:
-        super().__init__()
-        self.chat_id = user_id
-        self.bot = bot
-
-    def emit(self, record) -> None:
-        log_entry = self.format(record)
-        self.bot.send_message(chat_id=self.chat_id, text=log_entry)
-
-
-dispatcher = Dispatcher(bot, update_queue)
-thread = Thread(target=dispatcher.start, name='dispatcher')
+dispatcher: Dispatcher = Dispatcher(bot, update_queue)
+thread: Thread = Thread(target=dispatcher.start, name='dispatcher')
 thread.start()
 
-dispatcher.add_handler(CommandHandler('start',  handle_users_reply, pass_job_queue=True))
+dispatcher.add_handler(CommandHandler('start', handle_users_reply, pass_job_queue=True))
 dispatcher.add_handler(CallbackQueryHandler(handle_users_reply, pass_job_queue=True))
 dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply, pass_job_queue=True))
-logger.addHandler(TelegramLogsHandler(bot, ADMIN_TG_ID))
+logger.addHandler(TelegramLogsHandler(bot, config.ADMIN_TG_ID))
 logger.info('Bot started work')
 
 
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    try:
+@app.route(f'/{config.TOKEN}', methods=['POST'])
+def webhook() -> str:
+    if request.method == 'POST':
         update = telegram.update.Update.de_json(request.get_json(force=True), bot)
         update_queue.put(update)
         return 'ok'
-    except Exception as e:
-        logging.critical(e)
+    else:
+        return 'not ok'
 
 
 @app.route('/')
-def check():
+def check():  # noqa TAE001
     return render_template('index.html', check='Well done!')
 
 
 @app.route('/webhook', methods=['GET'])
-def webhook_set():
-    s = bot.setWebhook(f'{URL}/{TOKEN}')
-    if s:
+def webhook_set():  # noqa TAE001
+    result = bot.setWebhook(f'{config.URL}/{config.TOKEN}')
+    if result:
         return render_template('webhook.html', webhook='webhook setup ok!!!')
     else:
         return render_template('webhook.html', webhook='webhook setup failed')
