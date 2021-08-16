@@ -3,7 +3,7 @@ from environs import Env
 env = Env()
 env.read_env()
 
-TOKEN = env('TG_TOKEN_TEST')
+TOKEN = env('TG_TOKEN')
 URL = env('URL')
 ADMIN_TG_ID = env('ADMIN_TG_ID')
 
