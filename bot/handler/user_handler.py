@@ -8,6 +8,7 @@ from bot.handler.book_keyboard import get_search_keyboard
 from bot.handler.manage_books import get_cover_url
 from bot.handler.notifications import (notify_admin_unsuccessful_search, notify_admin_non_exist_book, get_help_message,
                                        get_admin_error_message, get_user_error_message)
+from config import config
 
 _database = None
 env = Env()
@@ -136,12 +137,5 @@ def handle_users_reply(update, context) -> str:
 
 def get_database_connection() -> Redis:
     global _database
-    if _database is None:
-        database_password = env('DATABASE_PASSWORD')
-        database_host = env('DATABASE_HOST')
-        database_port = env('DATABASE_PORT')
-
-        _database = redis.Redis(host=database_host,
-                                port=database_port,
-                                password=database_password)
+    _database = redis.StrictRedis.from_url(config.REDIS_URL) if _database is None else _database
     return _database

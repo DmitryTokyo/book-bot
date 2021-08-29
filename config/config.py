@@ -6,6 +6,7 @@ env.read_env()
 TOKEN = env('TG_TOKEN')
 URL = env('URL')
 ADMIN_TG_ID = env('ADMIN_TG_ID')
+REDIS_URL = env('REDIS_URL')
 
 URL_BOOKS_LIB = env('URL_BOOKS_LIB')
 
