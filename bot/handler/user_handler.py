@@ -1,14 +1,15 @@
+import json
 import logging
 from environs import Env
 import redis
 from redis import Redis
 
-from bot.handler.book_keyboard import get_books_list_keyboard, get_book_detail_keyboard, get_book_file_keyboard
-from bot.handler.book_keyboard import get_search_keyboard
-from bot.handler.manage_books import get_cover_url
-from bot.handler.notifications import (notify_admin_unsuccessful_search, notify_admin_non_exist_book, get_help_message,
-                                       get_admin_error_message, get_user_error_message)
-from config import config
+from bot.keyboard.book_keyboard import get_books_list_keyboard, get_book_detail_keyboard, get_book_file_keyboard
+from bot.keyboard.book_keyboard import get_search_keyboard
+from bot.utils.notifications import (notify_admin_unsuccessful_search, get_help_message,
+                                     get_admin_error_message, get_user_error_message)
+
+from config.config import Config
 
 _database = None
 env = Env()
@@ -55,19 +56,18 @@ def handle_book(update, context, db) -> str:
     except AttributeError:
         return 'HANDLE_BOOKS_MENU'
 
-    user_data = query.from_user
-    if 'description' in query.data:
-        __, book_url = query.data.split(',')
-        message, reply_markup, book_name, is_available = get_book_detail_keyboard(book_url, db, need_description=True)
-        query.edit_message_caption(caption=message, reply_markup=reply_markup)
-    else:
-        book_url = query.data
-        message, reply_markup, book_name, is_available = get_book_detail_keyboard(book_url, db)
-        query.delete_message()
-        cover_url = get_cover_url(book_url, db)
-        context.bot.send_photo(chat_id=chat_id, photo=cover_url, caption=message, reply_markup=reply_markup)
-    if not is_available:
-        notify_admin_non_exist_book(user_data, book_name)
+    user_id = query.from_user.id
+    book_id = query.data
+    title, reply_markup, = get_book_detail_keyboard(book_id, user_id, db)
+    query.delete_message()
+    book = json.loads(db.get(f'book_{book_id}'))
+    context.bot.send_photo(
+        chat_id=chat_id,
+        photo=book['book_mini_cover_img_url'],
+        caption=title,
+        reply_markup=reply_markup,
+    )
+
     return 'HANDLE_DOWNLOAD_FILE'
 
 
@@ -75,9 +75,13 @@ def handle_download_file(update, context, db) -> str:
     query = update.callback_query
     chat_id = query.message.chat_id
     query.delete_message()
+    book_id = query.data
     context.bot.send_message(chat_id=chat_id, text='Подождите, книга скачивается')
-    filename, book, reply_markup = get_book_file_keyboard(query.data, db)
-    context.bot.send_document(chat_id=chat_id, document=book, filename=filename)
+    filename, book_file, reply_markup = get_book_file_keyboard(book_id, db)
+    if filename:
+        context.bot.send_document(chat_id=chat_id, document=book_file, filename=filename, reply_markup=reply_markup)
+    else:
+        context.bot.send_message(chat_id=chat_id, text='К сожалению к данной книге доступ закрыт')
     return 'START'
 
 
@@ -137,5 +141,5 @@ def handle_users_reply(update, context) -> str:
 
 def get_database_connection() -> Redis:
     global _database
-    _database = redis.StrictRedis.from_url(config.REDIS_URL) if _database is None else _database
+    _database = redis.StrictRedis.from_url(Config.REDIS_URL) if _database is None else _database
     return _database

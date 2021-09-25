@@ -45,17 +45,6 @@ def get_did_not_find_message(book_name: str) -> str:
     )
 
 
-def get_limited_access_book_message() -> str:
-    return dedent(
-        'Доступ к бесплатной книге ограничен 😢🙅🏻‍♂'
-        'Для нового поиска воспользуйся кнопкой\n'
-
-        '"Новый поиск"\n'
-
-        '⬇️⬇️⬇️⬇️',
-    )
-
-
 def get_admin_error_message(user_data, chat_id: int, db) -> str:
     return dedent(
         f'Bot got error'
