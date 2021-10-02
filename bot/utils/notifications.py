@@ -37,8 +37,8 @@ def get_help_message() -> str:
 
 def get_did_not_find_message(book_name: str) -> str:
     return dedent(
-        f'К сожалению по запросу {book_name}'
-        f'ничего не нашлось.\n'
+        f'К сожалению по запросу:\n{book_name}\n'
+        f'ничего не нашлось.\n\n'
         f'Для нового поиска воспользуйся кнопкой\n'
         f'"Новый поиск"\n'
         f'⬇️⬇️⬇️⬇️',
@@ -46,12 +46,13 @@ def get_did_not_find_message(book_name: str) -> str:
 
 
 def get_admin_error_message(user_data, chat_id: int, db) -> str:
+    user_request = db.get(f'request_{chat_id}').decode('utf-8')
     return dedent(
-        f'Bot got error'
-        f'user_id - {user_data.id}'
-        f'username - {user_data.username}'
-        f'firstname - {user_data.first_name}'
-        f'request - {db.get(f"request_{chat_id}")}',
+        f'Bot got error\n'
+        f'user_id - {user_data.id}\n'
+        f'username - {user_data.username}\n'
+        f'firstname - {user_data.first_name}\n'
+        f'request - {user_request}',
     )
 
 
