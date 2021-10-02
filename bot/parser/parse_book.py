@@ -26,7 +26,8 @@ def find_books_on_user_request(book_name: str, user_id, db) -> None:
 
     title = soup.find('h3', string=re.compile('Найденные книги'))
     if not title:
-        return None
+        db.set(f'books{user_id}', json.dumps({}))
+        return
     books = _extract_books_info_from_request(soup, base_url)
     db.set(f'books{user_id}', json.dumps(books))
 
