@@ -5,20 +5,16 @@ from typing import TypeVar
 
 from bot.telegram_logger import logger, TelegramLogsHandler
 from config.config import Config
-from flask import Flask, request, render_template
+from flask import request, render_template
 import telegram
 from telegram import Bot
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 
 from bot.handler.user_handler import handle_users_reply
+from bot import create_app
 
-app: Flask = Flask(__name__)
 
-if app.config['ENV'] == 'production':
-    app.config.from_object('config.config.ProductionConfig')
-else:
-    app.config.from_object('config.config.DevelopmentConfig')
-
+app = create_app()
 
 RenderTemplate = TypeVar('RenderTemplate')
 
