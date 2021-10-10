@@ -1,9 +1,12 @@
 import json
 import logging
+from typing import Optional, Mapping
+
 from environs import Env
 import redis
 from redis import Redis
 
+from bot.handler.user_state import get_user_state
 from bot.keyboard.book_keyboard import get_books_list_keyboard, get_book_detail_keyboard, get_book_file_keyboard
 from bot.keyboard.book_keyboard import get_search_keyboard
 from bot.utils.notifications import (notify_admin_unsuccessful_search, get_help_message,
@@ -91,7 +94,7 @@ def handle_help(update, context, db) -> str:
     return 'START'
 
 
-def handle_users_reply(update, context) -> str:
+def handle_users_reply(update, context) -> Optional[str]:
     db = get_database_connection()
     query = update.callback_query
 
@@ -106,18 +109,8 @@ def handle_users_reply(update, context) -> str:
     else:
         return 'START'
 
-    if user_reply in ['/start', 'Новый поиск']:
-        user_state = 'START'
-    elif 'prev' in user_reply or 'next' in user_reply:
-        user_state = 'HANDLE_BOOKS_MENU'
-    elif 'description' in user_reply:
-        user_state = 'HANDLE_BOOK'
-    elif user_reply == '/help':
-        user_state = 'HELP'
-    else:
-        user_state = db.get(chat_id).decode('utf-8')
-
-    states_functions = {
+    user_state = get_user_state(user_reply, str(chat_id), db)
+    states_functions: Mapping = {
         'START': start,
         'HANDLE_BOOKS_MENU': handle_books_menu,
         'HANDLE_BOOK': handle_book,
@@ -128,8 +121,7 @@ def handle_users_reply(update, context) -> str:
     state_handler = states_functions[user_state]
     try:
         next_state = state_handler(update, context, db)
-        db.set(chat_id, next_state)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         error_admin_message = get_admin_error_message(user_data, chat_id, db)
         logger.error(error_admin_message)
         logger.exception(err)
@@ -137,6 +129,9 @@ def handle_users_reply(update, context) -> str:
         error_user_message = get_user_error_message(user_data)
         context.bot.send_message(chat_id=chat_id, text=error_user_message)
         return 'START'
+
+    db.set(str(chat_id), next_state)
+    return None
 
 
 def get_database_connection() -> Redis:

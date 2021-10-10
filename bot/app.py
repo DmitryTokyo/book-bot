@@ -1,8 +1,9 @@
 import os
 from queue import Queue
 from threading import Thread
+from typing import TypeVar
 
-from bot.logging import logger, TelegramLogsHandler
+from bot.telegram_logger import logger, TelegramLogsHandler
 from config.config import Config
 from flask import Flask, request, render_template
 import telegram
@@ -17,6 +18,9 @@ if app.config['ENV'] == 'production':
     app.config.from_object('config.config.ProductionConfig')
 else:
     app.config.from_object('config.config.DevelopmentConfig')
+
+
+RenderTemplate = TypeVar('RenderTemplate')
 
 
 bot: Bot = Bot(Config.TOKEN)
@@ -45,12 +49,12 @@ def webhook() -> str:
 
 
 @app.route('/')
-def check():  # noqa TAE001
+def check() -> RenderTemplate:
     return render_template('index.html', check='Well done!')
 
 
 @app.route('/webhook', methods=['GET'])
-def webhook_set():  # noqa TAE001
+def webhook_set() -> RenderTemplate:
     result = bot.setWebhook(f'{Config.URL}/{Config.TOKEN}')
     if result:
         os.makedirs('bot/files_storage/', exist_ok=True)

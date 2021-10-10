@@ -4,7 +4,7 @@ import os
 import requests
 
 
-def get_cover_image(book_url, db):
+def get_cover_image(book_url: str, db) -> bytes:
     book_id = os.path.basename(book_url)
     book = json.loads(db.get(f'book_{book_id}'))
     if book.get('cover_link'):
@@ -19,7 +19,7 @@ def get_cover_image(book_url, db):
     return image_file
 
 
-def download_cover(cover_path, cover_url):
+def download_cover(cover_path: str, cover_url: str) -> None:
     response = requests.get(cover_url, stream=True)
     response.raise_for_status()
 

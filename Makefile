@@ -3,3 +3,6 @@ style:
 
 types:
 	mypy bot
+
+check:
+	make style types

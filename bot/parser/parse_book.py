@@ -1,20 +1,21 @@
 import json
 import os
 import random
-from typing import Optional
+from typing import Optional, Any
 
 import requests
 import re
 from urllib.parse import urljoin
 from pathlib import PurePath
 from bs4 import BeautifulSoup
+from requests import Response
 
 from config.config import Config
 
 BookLib = list[dict[str, str]]
 
 
-def find_books_on_user_request(book_name: str, user_id, db) -> None:
+def find_books_on_user_request(book_name: str, user_id: int, db) -> None:
     base_url = Config.URL_BOOKS_LIB
     search_books_url = urljoin(base_url, 'booksearch')
     params = {'ask': book_name}
@@ -32,7 +33,7 @@ def find_books_on_user_request(book_name: str, user_id, db) -> None:
     db.set(f'books{user_id}', json.dumps(books))
 
 
-def _extract_books_info_from_request(soup, base_url):
+def _extract_books_info_from_request(soup, base_url: str) -> list[dict[str, str]]:
     books = []
     books_divs = soup.find('div', class_='wrap').find_all('div', class_='item')
     for book_div in books_divs:
@@ -55,7 +56,7 @@ def _extract_books_info_from_request(soup, base_url):
 def find_book_download_url(book: dict, book_id: int, db) -> None:
     book_page_url = book.get('book_page_url')
     params = {'f': 'epub'}
-    response = _make_request(book_page_url, params=params)
+    response = _make_request(book_page_url, params=params) if book_page_url else None
     if not response:
         return None
 
@@ -66,7 +67,7 @@ def find_book_download_url(book: dict, book_id: int, db) -> None:
     db.set(f'book_{book_id}', json.dumps(book))
 
 
-def get_book_file_info(book_id, db):
+def get_book_file_info(book_id: int, db) -> Optional[dict[Any, str]]:
     book = json.loads(db.get(f'book_{book_id}'))
 
     if book.get('local_file_path'):
@@ -76,7 +77,7 @@ def get_book_file_info(book_id, db):
                 book_file = file.read()
                 book_file_info = {
                     'book_file': book_file,
-                    'filename': book.get('filename')
+                    'filename': book.get('filename'),
                 }
             return book_file_info
     response = _make_request(book['book_file_url'], stream=True)
@@ -84,7 +85,7 @@ def get_book_file_info(book_id, db):
     if not response:
         return None
 
-    book_filename_search_result = re.search('(?<=[t/])\w*(.epub)', book['book_file_url'])
+    book_filename_search_result = re.search(r'(?<=[t/])\w*(.epub)', book['book_file_url'])
 
     if not book_filename_search_result:
         return None
@@ -102,17 +103,12 @@ def get_book_file_info(book_id, db):
     db.set(f'book_{book_id}', json.dumps(book))
     book_file_info = {
         'book_file': book_file,
-        'filename': book.get('filename')
+        'filename': book.get('filename'),
     }
     return book_file_info
 
 
-def is_book_available(link):
-    response = requests.get(link)
-    return bool(response.headers.get('Content-Length'))
-
-
-def _get_user_agent():
+def _get_user_agent() -> str:
     """
     This function is working while fake-useragent lib
     has the bug
@@ -127,7 +123,7 @@ def _make_request(
         method: str = 'get',
         params: dict = None,
         stream=False,
-) -> Optional[str]:
+) -> Optional[Response]:
     headers = {'User-Agent': _get_user_agent()}
 
     params = params

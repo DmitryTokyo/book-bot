@@ -1,5 +1,7 @@
 import json
 from textwrap import dedent
+from typing import Optional, Any, Union
+
 from more_itertools import chunked
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 
@@ -7,8 +9,15 @@ from bot.utils.check_speller import get_checking_by_speller
 from bot.utils.notifications import get_did_not_find_message
 from bot.parser.parse_book import find_book_download_url, find_books_on_user_request, get_book_file_info
 
+BookKeyboard = Union[ReplyKeyboardMarkup, InlineKeyboardMarkup]
 
-def get_books_list_keyboard(user_id, db, book_name=None, menu_button=None):
+
+def get_books_list_keyboard(
+        user_id: int,
+        db,
+        book_name: str = None,
+        menu_button: str = None,
+) -> tuple[Any, BookKeyboard, bool]:
     is_found = True
     max_books_numbers_on_page = 4
     if book_name:  # This means first request from user
@@ -30,8 +39,8 @@ def get_books_list_keyboard(user_id, db, book_name=None, menu_button=None):
     if not menu_button:
         page_number = 1
     else:
-        __, page_number = menu_button.split(',')
-        page_number = int(page_number)
+        __, menu_button_page_number = menu_button.split(',')
+        page_number = int(menu_button_page_number)
 
     start_book_number_on_page = page_number * max_books_numbers_on_page - 3  # What book number keyboard start
 
@@ -64,7 +73,7 @@ def get_books_list_keyboard(user_id, db, book_name=None, menu_button=None):
     return message, InlineKeyboardMarkup(books_keyboard), is_found
 
 
-def get_book_detail_keyboard(book_id, user_id, db):
+def get_book_detail_keyboard(book_id: int, user_id: int, db) -> tuple[str, InlineKeyboardMarkup]:
     books = json.loads(db.get(f'books{user_id}'))
     user_chosen_book = next(filter(lambda book: book['book_id'] == book_id, books))
 
@@ -73,16 +82,12 @@ def get_book_detail_keyboard(book_id, user_id, db):
 
     book = json.loads(db.get(f'book_{book_id}'))
     title = book['title']
-    book_keyboard: list = [[
-        InlineKeyboardButton(
-            f'Скачать книгу {title}', callback_data=str(book_id),
-        ),
-    ]]
+    book_keyboard: list = [[InlineKeyboardButton(f'Скачать книгу {title}', callback_data=str(book_id))]]
 
     return title, InlineKeyboardMarkup(book_keyboard)
 
 
-def get_book_file_keyboard(book_id, db):
+def get_book_file_keyboard(book_id: int, db) -> tuple[Optional[str], Optional[bytes], BookKeyboard]:
     search_keyboard = get_search_keyboard()
     book_file_info = get_book_file_info(book_id, db)
     if not book_file_info:
@@ -91,7 +96,6 @@ def get_book_file_keyboard(book_id, db):
     return book_file_info['filename'], book_file_info['book_file'], search_keyboard
 
 
-def get_search_keyboard():
-    search_keyboard = [['Новый поиск']]
-    search_markup = ReplyKeyboardMarkup(search_keyboard, one_time_keyboard=True, resize_keyboard=True)
-    return search_markup
+def get_search_keyboard() -> BookKeyboard:
+    search_keyboard: list = [['Новый поиск']]
+    return ReplyKeyboardMarkup(search_keyboard, one_time_keyboard=True, resize_keyboard=True)

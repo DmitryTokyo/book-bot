@@ -5,7 +5,7 @@ from config.config import Config
 
 def get_checking_by_speller(text: str) -> str:
     data = {'text': text}
-    response = getattr(requests, 'post')(
+    response = getattr(requests, 'post')(  # noqa: B009
         Config.YANDEX_SPELLER_URL,
         data=data or {},
     )
