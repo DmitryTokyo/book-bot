@@ -1,8 +1,10 @@
 import pytest
-from flask import Flask
+
+from bot.app import app
 
 
 @pytest.fixture
-def app():
-    app = Flask(__name__)
-    return app
+def client():
+    app.config.from_object('config.config.TestingConfig')
+    with app.test_client() as client:
+        yield client

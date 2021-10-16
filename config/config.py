@@ -25,3 +25,7 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     pass
+
+
+class TestingConfig(Config):
+    TESTING = True

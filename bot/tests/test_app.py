@@ -1,7 +1,4 @@
-import pytest
-
 
 def test_check(client):
     response = client.get('/')
-
-    assert response == 200
+    assert response.status_code == 200

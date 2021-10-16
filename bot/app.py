@@ -24,7 +24,7 @@ update_queue: Queue = Queue()
 
 
 dispatcher: Dispatcher = Dispatcher(bot, update_queue)
-thread: Thread = Thread(target=dispatcher.start, name='dispatcher')
+thread: Thread = Thread(target=dispatcher.start, name='dispatcher', daemon=True)
 thread.start()
 
 dispatcher.add_handler(CommandHandler('start', handle_users_reply, pass_job_queue=True))
